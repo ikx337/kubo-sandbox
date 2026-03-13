@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Mi primer juego</title>
+</head>
+
+<body>
+
+<h1>Mi juego web</h1>
+<button onclick="sumar()">Ganar punto</button>
+
+<p id="puntos">Puntos: 0</p>
+
+<script>
+let puntos = 0;
+
+function sumar(){
+    puntos++;
+    document.getElementById("puntos").innerText = "Puntos: " + puntos;
+}
+</script>
+
+</body>
+</html>
