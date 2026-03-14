@@ -1,24 +1,2245 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<title>Mi primer juego</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KUBO</title>
+  <style>
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #10131a;
+      color: #fff;
+      user-select: none;
+    }
+
+    #app {
+      display: flex;
+      width: 100vw;
+      height: 100vh;
+    }
+
+    #gameWrap {
+      position: relative;
+      flex: 1;
+      background: linear-gradient(#6ec6ff 0%, #9fe2ff 45%, #d9f5ff 100%);
+      overflow: hidden;
+      border-right: 3px solid rgba(255,255,255,0.15);
+    }
+
+    #gameCanvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+      image-rendering: pixelated;
+      cursor: crosshair;
+      outline: none;
+    }
+
+    #healthPanel {
+      position: absolute;
+      left: 14px;
+      top: 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 280px;
+      background: rgba(0,0,0,0.38);
+      border: 1px solid rgba(255,255,255,0.16);
+      border-radius: 14px;
+      padding: 10px 12px;
+      backdrop-filter: blur(6px);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.18);
+      pointer-events: none;
+    }
+
+    #heartIcon {
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.08);
+      font-size: 22px;
+      flex-shrink: 0;
+    }
+
+    #healthText {
+      font-size: 13px;
+      color: #e8edf7;
+      margin-bottom: 5px;
+    }
+
+    #healthBarOuter {
+      width: 190px;
+      height: 14px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      overflow: hidden;
+      border: 1px solid rgba(255,255,255,0.16);
+      position: relative;
+    }
+
+    #healthBarInner {
+      width: 100%;
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, #ff5c6f 0%, #ff784f 100%);
+      transition: width 0.12s linear;
+    }
+
+    #healthBurn {
+      font-size: 12px;
+      color: #ffb1a8;
+      margin-top: 4px;
+      min-height: 14px;
+    }
+
+    #hud {
+      position: absolute;
+      left: 14px;
+      top: 92px;
+      background: rgba(0,0,0,0.35);
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.55;
+      backdrop-filter: blur(6px);
+      pointer-events: none;
+      min-width: 300px;
+    }
+
+    #sidebar {
+      width: 330px;
+      background: #171b24;
+      display: flex;
+      flex-direction: column;
+      padding: 14px;
+      gap: 12px;
+      overflow: hidden;
+    }
+
+    #sidebar h2 {
+      margin: 0;
+      font-size: 20px;
+    }
+
+    .sub {
+      display: none;
+      margin: 0;
+      color: #b6bfd1;
+      font-size: 13px;
+    }
+
+    #categoryTabs {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 8px;
+    }
+
+    .tabBtn {
+      padding: 8px 10px;
+      border: none;
+      border-radius: 10px;
+      background: #242b3d;
+      color: #e7eef9;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: 700;
+      transition: 0.15s ease;
+    }
+
+    .tabBtn:hover { background: #2f3952; }
+    .tabBtn.active {
+      background: #3d4f78;
+      outline: 2px solid rgba(255,255,255,0.16);
+    }
+
+    #actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .actionBtn {
+      padding: 10px;
+      border: none;
+      border-radius: 10px;
+      background: #2b3550;
+      color: #fff;
+      cursor: pointer;
+      font-weight: bold;
+      transition: 0.15s ease;
+    }
+
+    .actionBtn:hover { background: #39486b; }
+    .actionBtn.active {
+      outline: 2px solid #61e6ff;
+      background: #31556d;
+    }
+
+    #materialGrid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+
+    .materialBtn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+      padding: 10px;
+      border-radius: 12px;
+      border: 2px solid rgba(255,255,255,0.1);
+      background: #222838;
+      color: white;
+      cursor: pointer;
+      text-align: left;
+      transition: 0.15s ease;
+    }
+
+    .materialBtn:hover {
+      transform: translateY(-1px);
+      border-color: rgba(255,255,255,0.28);
+      background: #2a3145;
+    }
+
+    .materialBtn.selected {
+      border-color: #ffd24d;
+      box-shadow: 0 0 0 2px rgba(255,210,77,0.18) inset;
+      background: #333b52;
+    }
+
+    .swatch {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      border: 2px solid rgba(255,255,255,0.18);
+      flex-shrink: 0;
+      image-rendering: pixelated;
+      display: grid;
+      place-items: center;
+      font-size: 18px;
+    }
+
+    #footerNote {
+      margin-top: auto;
+      font-size: 12px;
+      color: #98a3b7;
+      line-height: 1.55;
+      background: rgba(255,255,255,0.04);
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    #startScreen {
+      position: fixed;
+      inset: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background:
+        radial-gradient(circle at 50% 30%, rgba(255,255,255,0.12), rgba(255,255,255,0) 30%),
+        linear-gradient(180deg, rgba(7,12,25,0.2), rgba(7,12,25,0.75)),
+        linear-gradient(135deg, #16213b 0%, #10131a 60%, #0a0c11 100%);
+      backdrop-filter: blur(2px);
+    }
+
+    #startPanel {
+      width: min(92vw, 720px);
+      padding: 32px 28px;
+      border-radius: 28px;
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(15, 20, 34, 0.68);
+      box-shadow: 0 25px 80px rgba(0,0,0,0.35);
+      text-align: center;
+      position: relative;
+    }
+
+    #titleKubo {
+      margin: 0 0 14px;
+      font-size: clamp(68px, 14vw, 150px);
+      line-height: 0.9;
+      letter-spacing: 6px;
+      font-weight: 900;
+      background: linear-gradient(180deg, #fff5a8 0%, #ffb44d 38%, #ff6a45 72%, #ff3f6f 100%);
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow:
+        0 0 18px rgba(255, 186, 87, 0.22),
+        0 8px 40px rgba(255, 92, 111, 0.22);
+      filter: drop-shadow(0 6px 18px rgba(0,0,0,0.35));
+    }
+
+    #startTagline {
+      margin: 0 0 24px;
+      color: #d9e3f7;
+      font-size: 16px;
+      letter-spacing: 0.8px;
+    }
+
+    .menuBtn {
+      width: min(320px, 80%);
+      margin: 10px auto 0;
+      display: block;
+      padding: 16px 20px;
+      border-radius: 16px;
+      border: 2px solid rgba(255,255,255,0.12);
+      background: linear-gradient(180deg, #28324a 0%, #1f2638 100%);
+      color: #fff;
+      font-size: 22px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: 0.16s ease;
+    }
+
+    .menuBtn:hover {
+      transform: translateY(-2px) scale(1.01);
+      background: linear-gradient(180deg, #33405f 0%, #26304a 100%);
+      border-color: rgba(255,255,255,0.24);
+    }
+
+    .menuBtn.play {
+      background: linear-gradient(180deg, #ffca61 0%, #ff8f4a 65%, #ff5a5f 100%);
+      color: #1c1620;
+      border-color: rgba(255,255,255,0.28);
+      box-shadow: 0 10px 24px rgba(255,106,69,0.22);
+    }
+
+    .menuBtn.play:hover {
+      background: linear-gradient(180deg, #ffd87f 0%, #ff9f62 60%, #ff6e72 100%);
+    }
+
+    #creditsOverlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(6, 9, 16, 0.62);
+      backdrop-filter: blur(4px);
+    }
+
+    #creditsBox {
+      width: min(92vw, 520px);
+      background: #171d2a;
+      border: 1px solid rgba(255,255,255,0.15);
+      border-radius: 22px;
+      padding: 24px 22px 20px;
+      box-shadow: 0 18px 54px rgba(0,0,0,0.32);
+      position: relative;
+    }
+
+    #closeCredits {
+      position: absolute;
+      right: 14px;
+      top: 14px;
+      width: 38px;
+      height: 38px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      background: #29334d;
+      color: white;
+      font-size: 20px;
+      font-weight: bold;
+    }
+
+    #closeCredits:hover { background: #364363; }
+
+    #creditsText {
+      margin: 16px 0 0;
+      white-space: pre-line;
+      line-height: 1.7;
+      color: #edf2ff;
+      font-size: 16px;
+      text-align: center;
+    }
+
+    .hiddenUI { display: none !important; }
+  </style>
 </head>
-
 <body>
+  <div id="startScreen">
+    <div id="startPanel">
+      <h1 id="titleKubo">KUBO</h1>
+      <p id="startTagline">Construye, experimenta y convierte el caos en tu mundo.</p>
+      <button id="playBtn" class="menuBtn play">Jugar</button>
+      <button id="creditsBtn" class="menuBtn">Créditos</button>
+    </div>
+  </div>
 
-<h1>Mi juego web</h1>
-<button onclick="sumar()">Ganar punto</button>
+  <div id="creditsOverlay">
+    <div id="creditsBox">
+      <button id="closeCredits">X</button>
+      <div id="creditsText">Producción general
+Iker Armando
 
-<p id="puntos">Puntos: 0</p>
+Un juego creado con dedicación, imaginación y esfuerzo.
 
-<script>
-let puntos = 0;
+Gracias por jugar.
 
-function sumar(){
-    puntos++;
-    document.getElementById("puntos").innerText = "Puntos: " + puntos;
-}
-</script>
+© 2026 Iker Armando. Todos los derechos reservados.</div>
+    </div>
+  </div>
 
+  <div id="app">
+    <div id="gameWrap">
+      <canvas id="gameCanvas" tabindex="0"></canvas>
+
+      <div id="healthPanel">
+        <div id="heartIcon">❤</div>
+        <div>
+          <div id="healthText">Vida: 100 / 100</div>
+          <div id="healthBarOuter"><div id="healthBarInner"></div></div>
+          <div id="healthBurn"></div>
+        </div>
+      </div>
+
+      <div id="hud"></div>
+    </div>
+
+    <aside id="sidebar">
+      <h2>Construcción</h2>
+      <p class="sub"></p>
+
+      <div id="categoryTabs"></div>
+
+      <div id="actions">
+        <button id="placeModeBtn" class="actionBtn active">Modo: Poner</button>
+        <button id="eraseModeBtn" class="actionBtn">Modo: Borrar</button>
+      </div>
+
+      <div id="materialGrid"></div>
+
+      <div id="footerNote">
+        Controles:<br>
+        A / D o flechas: moverte<br>
+        Shift en tierra: correr<br>
+        Espacio / W / ↑: saltar<br>
+        Shift dentro del agua: subir nadando<br>
+        Click izquierdo: colocar / usar sección<br>
+        Click derecho: borrar<br>
+        Mantener clic y arrastrar: construir o borrar<br>
+        F: usar mechero si lo tienes<br>
+        E: encender TNT cercana<br>
+        R: reiniciar jugador
+      </div>
+    </aside>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    const hud = document.getElementById('hud');
+    const materialGrid = document.getElementById('materialGrid');
+    const categoryTabs = document.getElementById('categoryTabs');
+    const placeModeBtn = document.getElementById('placeModeBtn');
+    const eraseModeBtn = document.getElementById('eraseModeBtn');
+    const gameWrap = document.getElementById('gameWrap');
+    const healthText = document.getElementById('healthText');
+    const healthBarInner = document.getElementById('healthBarInner');
+    const healthBurn = document.getElementById('healthBurn');
+    const startScreen = document.getElementById('startScreen');
+    const playBtn = document.getElementById('playBtn');
+    const creditsBtn = document.getElementById('creditsBtn');
+    const creditsOverlay = document.getElementById('creditsOverlay');
+    const closeCredits = document.getElementById('closeCredits');
+
+    function resizeCanvas() {
+      canvas.width = gameWrap.clientWidth;
+      canvas.height = gameWrap.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    const Sound = {
+      ctx: null,
+      cooldowns: {},
+      ensure() {
+        if (!this.ctx) {
+          const AC = window.AudioContext || window.webkitAudioContext;
+          if (!AC) return null;
+          this.ctx = new AC();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+        return this.ctx;
+      },
+      can(key, cooldown = 0) {
+        const now = performance.now();
+        if ((this.cooldowns[key] || 0) + cooldown > now) return false;
+        this.cooldowns[key] = now;
+        return true;
+      },
+      tone({ key='tone', freq=440, dur=0.08, type='square', vol=0.035, slide=0, cooldown=0 }) {
+        const ac = this.ensure();
+        if (!ac || !this.can(key, cooldown)) return;
+        const t = ac.currentTime;
+        const osc = ac.createOscillator();
+        const gain = ac.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, t);
+        if (slide) osc.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), t + dur);
+        gain.gain.setValueAtTime(0.0001, t);
+        gain.gain.exponentialRampToValueAtTime(vol, t + 0.01);
+        gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+        osc.connect(gain);
+        gain.connect(ac.destination);
+        osc.start(t);
+        osc.stop(t + dur + 0.02);
+      },
+      click() { this.tone({ key:'ui', freq:620, dur:0.05, vol:0.03, slide:-120, cooldown:50 }); },
+      playStart() {
+        this.tone({ key:'start1', freq:340, dur:0.08, vol:0.04, slide:120 });
+        setTimeout(() => this.tone({ key:'start2', freq:520, dur:0.12, vol:0.045, slide:160 }), 55);
+      },
+      place() { this.tone({ key:'place', freq:240, dur:0.035, vol:0.024, slide:18, cooldown:35 }); },
+      erase() { this.tone({ key:'erase', freq:180, dur:0.03, vol:0.02, slide:-30, cooldown:35 }); },
+      jump() { this.tone({ key:'jump', freq:410, dur:0.08, vol:0.03, slide:120, cooldown:60 }); },
+      hurt() { this.tone({ key:'hurt', freq:130, dur:0.08, type:'sawtooth', vol:0.04, slide:-45, cooldown:80 }); },
+      pickup() { this.tone({ key:'pickup', freq:740, dur:0.08, vol:0.035, slide:180, cooldown:90 }); },
+      fire() { this.tone({ key:'fire', freq:520, dur:0.05, type:'triangle', vol:0.03, slide:-90, cooldown:50 }); },
+      splash() { this.tone({ key:'splash', freq:220, dur:0.06, type:'triangle', vol:0.025, slide:70, cooldown:70 }); },
+      tnt() { this.tone({ key:'tnt', freq:200, dur:0.06, type:'square', vol:0.03, slide:-40, cooldown:80 }); },
+      boom() {
+        this.tone({ key:'boomA', freq:90, dur:0.18, type:'sawtooth', vol:0.06, slide:-30 });
+        setTimeout(() => this.tone({ key:'boomB', freq:170, dur:0.14, type:'triangle', vol:0.04, slide:-70 }), 18);
+      },
+      tornado() { this.tone({ key:'tornado', freq:260, dur:0.08, type:'triangle', vol:0.02, slide:40, cooldown:120 }); },
+      rain() { this.tone({ key:'rain', freq:320, dur:0.04, type:'triangle', vol:0.015, slide:-60, cooldown:80 }); },
+      lightning() { this.tone({ key:'lightning', freq:880, dur:0.05, type:'sawtooth', vol:0.05, slide:-500, cooldown:120 }); }
+    };
+
+    const TILE = 32;
+    const WORLD_COLS = 220;
+    const WORLD_ROWS = 28;
+    const GROUND_ROW = 20;
+    const GRAVITY = 0.42;
+    const MOVE_SPEED = 3.2;
+    const RUN_SPEED = 5.1;
+    const JUMP_FORCE = -8.8;
+    const MAX_HEALTH = 100;
+    const MAX_BUBBLES = 5;
+    const FLUID_UPDATE_INTERVAL = 14;
+
+    let gameStarted = false;
+    let cameraShakeX = 0;
+    let cameraShakeY = 0;
+
+    const materials = [
+      { id: 'grass', name: 'Pasto', color: '#54b948', solid: true, top: '#7ae06c', section: 'blocks' },
+      { id: 'dirt', name: 'Tierra', color: '#8b5a2b', solid: true, top: '#a96d34', section: 'blocks' },
+      { id: 'stone', name: 'Piedra', color: '#787d88', solid: true, top: '#9ea4ae', section: 'blocks' },
+      { id: 'wood', name: 'Madera', color: '#8a5b30', solid: true, top: '#a66b3b', section: 'blocks' },
+      { id: 'sand', name: 'Arena', color: '#d7c57b', solid: true, top: '#eadc9b', section: 'blocks' },
+      { id: 'brick', name: 'Ladrillo', color: '#b14c3f', solid: true, top: '#cb6557', section: 'blocks' },
+      { id: 'leaf', name: 'Hoja', color: '#2f9b52', solid: true, top: '#53bb74', section: 'blocks' },
+      { id: 'ice', name: 'Hielo', color: '#8de6ff', solid: true, top: '#bff3ff', section: 'blocks' },
+      { id: 'gold', name: 'Oro', color: '#d9b500', solid: true, top: '#ffe169', section: 'blocks' },
+      { id: 'obsidian', name: 'Obsidiana', color: '#342244', solid: true, top: '#56386e', section: 'blocks' },
+      { id: 'log', name: 'Tronco', color: '#7a4d27', solid: true, top: '#a56c3f', section: 'blocks' },
+      { id: 'lava', name: 'Lava', color: '#ff642e', solid: false, liquid: true, damage: 10, top: '#ffd25f', section: 'blocks' },
+      { id: 'water', name: 'Agua', color: '#2f8fff', solid: false, liquid: true, swim: true, top: '#84caff', section: 'blocks' },
+      { id: 'water_still', name: 'Agua quieta', color: '#2f8fff', solid: false, liquid: true, swim: true, top: '#84caff', hidden: true },
+      { id: 'lava_still', name: 'Lava quieta', color: '#ff642e', solid: false, liquid: true, damage: 10, top: '#ffd25f', hidden: true },
+    ];
+
+    const toolsByCategory = {
+      blocks: materials.filter(m => !m.hidden && m.section === 'blocks').map(m => ({ id: m.id, name: m.name, type: 'block' })),
+      animals: [
+        { id: 'dog', name: 'Perro', type: 'animal', icon: '🐶', desc: 'Camina y ladra' },
+        { id: 'cat', name: 'Gato', type: 'animal', icon: '🐱', desc: 'Ágil y curioso' },
+        { id: 'lion', name: 'León', type: 'animal', icon: '🦁', desc: 'Grande y peligroso' },
+        { id: 'rabbit', name: 'Conejo', type: 'animal', icon: '🐰', desc: 'Salta rápido' },
+        { id: 'fish', name: 'Pez', type: 'animal', icon: '🐟', desc: 'Nada en el agua' },
+      ],
+      entities: [
+        { id: 'merchant', name: 'Comerciante', type: 'entity', icon: '🧑', desc: 'Intercambio amistoso' },
+        { id: 'guard', name: 'Guardia', type: 'entity', icon: '🛡️', desc: 'Vigila la zona' },
+        { id: 'doctor', name: 'Doctora', type: 'entity', icon: '🩺', desc: 'Te puede curar' },
+        { id: 'builder', name: 'Constructor', type: 'entity', icon: '🔨', desc: 'Levanta bloques' },
+        { id: 'villager', name: 'Aldeano', type: 'entity', icon: '🙂', desc: 'Solo pasea' },
+      ],
+      disasters: [
+        { id: 'tornado', name: 'Tornado', type: 'disaster', icon: '🌪', desc: 'Aspira bloques y dura 10 s' },
+        { id: 'meteor', name: 'Meteorito', type: 'disaster', icon: '☄️', desc: 'Cae y explota' },
+        { id: 'lightning', name: 'Rayo', type: 'disaster', icon: '⚡', desc: 'Golpe instantáneo' },
+        { id: 'rain', name: 'Lluvia', type: 'disaster', icon: '🌧️', desc: 'Apaga fuegos por 10 s' },
+        { id: 'quake', name: 'Terremoto', type: 'disaster', icon: '🌋', desc: 'Sacude el mundo' },
+      ],
+      items: [
+        { id: 'lighter', name: 'Mechero', type: 'item', icon: '🔥', desc: 'Enciende fuego con F' },
+        { id: 'medkit', name: 'Botiquín', type: 'item', icon: '🩹', desc: 'Recupera vida' },
+        { id: 'armor', name: 'Armadura', type: 'item', icon: '🛡️', desc: 'Reduce daño temporal' },
+        { id: 'boots', name: 'Botas', type: 'item', icon: '👢', desc: 'Te hace correr más' },
+        { id: 'oxygen', name: 'Tanque O2', type: 'item', icon: '🫧', desc: 'Más oxígeno bajo agua' },
+      ],
+      explosives: [
+        { id: 'tnt', name: 'TNT', type: 'explosive', icon: '💣', desc: 'Explosión estándar' },
+        { id: 'mini_tnt', name: 'Mini TNT', type: 'explosive', icon: '🧨', desc: 'Explosión pequeña' },
+        { id: 'mega_tnt', name: 'Mega TNT', type: 'explosive', icon: '💥', desc: 'Explosión grande' },
+        { id: 'bomb', name: 'Bomba', type: 'explosive', icon: '⏱️', desc: 'Se activa sola' },
+        { id: 'mine', name: 'Mina', type: 'explosive', icon: '⚠️', desc: 'Explota al pisarla' },
+      ],
+    };
+
+    const categories = [
+      { id: 'blocks', label: 'Bloques' },
+      { id: 'animals', label: 'Animales' },
+      { id: 'entities', label: 'Entidades' },
+      { id: 'disasters', label: 'Desastres naturales' },
+      { id: 'items', label: 'Items' },
+      { id: 'explosives', label: 'Explosivos' },
+    ];
+
+    const materialById = Object.fromEntries(materials.map(m => [m.id, m]));
+    const world = Array.from({ length: WORLD_ROWS }, () => Array(WORLD_COLS).fill(null));
+
+    const state = {
+      activeCategory: 'blocks',
+      editMode: 'place',
+      selected: {
+        blocks: 'grass',
+        animals: 'dog',
+        entities: 'merchant',
+        disasters: 'tornado',
+        items: 'lighter',
+        explosives: 'tnt',
+      }
+    };
+
+    const player = {
+      x: 5 * TILE,
+      y: 8 * TILE,
+      w: 22,
+      h: 30,
+      vx: 0,
+      vy: 0,
+      onGround: false,
+      color: '#ff556e',
+      health: MAX_HEALTH,
+      isBurning: false,
+      burnTimer: 0,
+      hurtFlash: 0,
+      inWater: false,
+      inLava: false,
+      jumpPressed: false,
+      bubbles: MAX_BUBBLES,
+      bubbleFrame: 0,
+      drownFrame: 0,
+      headUnderWater: false,
+      inventory: {
+        hasLighter: false,
+        armorTimer: 0,
+        bootsTimer: 0,
+        oxygenTimer: 0,
+      }
+    };
+
+    const keys = {};
+    let frameCount = 0;
+    let cameraX = 0;
+    let cameraY = 0;
+    let mouse = { x: 0, y: 0, tileX: 0, tileY: 0, inside: false, leftDown: false, rightDown: false };
+
+    const dogs = [];
+    const merchants = [];
+    const tornadoes = [];
+    const pickups = [];
+    const fires = [];
+    const tnts = [];
+    const particles = [];
+    const meteors = [];
+    const lightnings = [];
+    const rains = [];
+    const quakes = [];
+
+    function getMaxBubbles() {
+      return MAX_BUBBLES + (player.inventory.oxygenTimer > 0 ? 3 : 0);
+    }
+
+    function resetPlayer(fullHealth = false) {
+      player.x = 5 * TILE;
+      player.y = 8 * TILE;
+      player.vx = 0;
+      player.vy = 0;
+      player.isBurning = false;
+      player.burnTimer = 0;
+      player.hurtFlash = 0;
+      player.inWater = false;
+      player.inLava = false;
+      player.jumpPressed = false;
+      player.bubbles = getMaxBubbles();
+      player.bubbleFrame = 0;
+      player.drownFrame = 0;
+      player.headUnderWater = false;
+      if (fullHealth) player.health = MAX_HEALTH;
+    }
+    resetPlayer(true);
+
+    function getSelectedTool() {
+      return state.selected[state.activeCategory];
+    }
+
+    function isWaterId(id) {
+      return id === 'water' || id === 'water_still';
+    }
+    function isLavaId(id) {
+      return id === 'lava' || id === 'lava_still';
+    }
+    function baseLiquidId(id) {
+      if (isWaterId(id)) return 'water';
+      if (isLavaId(id)) return 'lava';
+      return id;
+    }
+    function stillLiquidId(id) {
+      if (isWaterId(id)) return 'water_still';
+      if (isLavaId(id)) return 'lava_still';
+      return id;
+    }
+
+    function getBlock(tileX, tileY) {
+      if (tileX < 0 || tileX >= WORLD_COLS || tileY < 0 || tileY >= WORLD_ROWS) return 'BOUNDARY';
+      return world[tileY][tileX];
+    }
+
+    function setBlock(tileX, tileY, id) {
+      if (tileX < 0 || tileX >= WORLD_COLS || tileY < 0 || tileY >= WORLD_ROWS) return;
+      world[tileY][tileX] = id;
+    }
+
+    function isSolidAt(tileX, tileY) {
+      const blockId = getBlock(tileX, tileY);
+      if (blockId === 'BOUNDARY') return true;
+      if (!blockId) return false;
+      return !!materialById[blockId]?.solid;
+    }
+
+    function rectIntersectsSolid(x, y, w, h) {
+      const left = Math.floor(x / TILE);
+      const right = Math.floor((x + w - 1) / TILE);
+      const top = Math.floor(y / TILE);
+      const bottom = Math.floor((y + h - 1) / TILE);
+      for (let ty = top; ty <= bottom; ty++) {
+        for (let tx = left; tx <= right; tx++) {
+          if (isSolidAt(tx, ty)) return true;
+        }
+      }
+      return false;
+    }
+
+    function rectTouchesPredicate(x, y, w, h, predicate) {
+      const left = Math.floor(x / TILE);
+      const right = Math.floor((x + w - 1) / TILE);
+      const top = Math.floor(y / TILE);
+      const bottom = Math.floor((y + h - 1) / TILE);
+      for (let ty = top; ty <= bottom; ty++) {
+        for (let tx = left; tx <= right; tx++) {
+          const blockId = getBlock(tx, ty);
+          if (predicate(blockId, tx, ty)) return true;
+        }
+      }
+      return false;
+    }
+
+    function overlapRect(a, b) {
+      return !(a.x + a.w <= b.x || a.x >= b.x + b.w || a.y + a.h <= b.y || a.y >= b.y + b.h);
+    }
+
+    function distanceSq(ax, ay, bx, by) {
+      const dx = ax - bx;
+      const dy = ay - by;
+      return dx * dx + dy * dy;
+    }
+
+    function generateWorld() {
+      for (let y = 0; y < WORLD_ROWS; y++) {
+        for (let x = 0; x < WORLD_COLS; x++) {
+          world[y][x] = null;
+        }
+      }
+
+      const surfaceHeights = Array(WORLD_COLS).fill(GROUND_ROW);
+      for (let x = 0; x < WORLD_COLS; x++) {
+        let surface = GROUND_ROW + Math.floor(Math.sin(x * 0.18) * 1.4) + Math.floor(Math.sin(x * 0.05) * 2);
+        surface = Math.max(14, Math.min(WORLD_ROWS - 6, surface));
+        surfaceHeights[x] = surface;
+
+        for (let y = surface; y < WORLD_ROWS; y++) {
+          if (y === surface) world[y][x] = 'grass';
+          else if (y < surface + 3) world[y][x] = 'dirt';
+          else world[y][x] = 'stone';
+        }
+      }
+
+      const lakeCenters = [24, 67, 111, 163, 200];
+      for (const cx of lakeCenters) {
+        const width = 3 + (cx % 3);
+        const depth = 2 + (cx % 2);
+        for (let x = cx - width; x <= cx + width; x++) {
+          if (x < 2 || x >= WORLD_COLS - 2) continue;
+          const dist = Math.abs(x - cx);
+          const localSurface = surfaceHeights[x];
+          const carveDepth = Math.max(1, depth - Math.floor(dist / 2));
+
+          for (let y = localSurface; y <= Math.min(WORLD_ROWS - 2, localSurface + carveDepth); y++) {
+            world[y][x] = null;
+          }
+          for (let y = localSurface + 1; y <= Math.min(WORLD_ROWS - 2, localSurface + carveDepth); y++) {
+            world[y][x] = 'water_still';
+          }
+          if (world[localSurface][x] === null && dist === width) {
+            world[localSurface][x] = 'grass';
+          }
+          if (world[localSurface + carveDepth + 1]?.[x] === null) {
+            world[localSurface + carveDepth + 1][x] = 'dirt';
+          }
+        }
+      }
+
+      for (let x = 8; x < 14; x++) world[12][x] = 'wood';
+      for (let x = 30; x < 36; x++) world[9][x] = 'brick';
+      for (let x = 52; x < 59; x++) world[15][x] = 'leaf';
+      for (let y = 16; y < 20; y++) world[y][70] = 'log';
+      for (let x = 71; x < 79; x++) world[16][x] = 'wood';
+      for (let x = 100; x < 106; x++) world[13][x] = 'ice';
+      for (let x = 145; x < 150; x++) world[11][x] = 'gold';
+      for (let x = 120; x < 124; x++) world[18][x] = 'lava_still';
+    }
+    generateWorld();
+
+    function createParticle(x, y, color, vx, vy, life = 60, size = 8) {
+      particles.push({ x, y, color, vx, vy, life, size });
+    }
+
+    function spawnAnimal(kind, tileX, tileY) {
+      const defs = {
+        dog:    { w:24, h:18, speed:1.0, body:'#7b5c38', accent:'#9b7347', bubble:'guau' },
+        cat:    { w:22, h:16, speed:1.2, body:'#5d6172', accent:'#9da3b8', bubble:'miau' },
+        lion:   { w:30, h:20, speed:0.82, body:'#b97b34', accent:'#d9a24f', bubble:'grrr' },
+        rabbit: { w:18, h:16, speed:1.35, body:'#ececec', accent:'#f3c6d2', bubble:'hop' },
+        fish:   { w:20, h:12, speed:1.05, body:'#51a6ff', accent:'#9dd4ff', bubble:'blub' },
+      };
+      const d = defs[kind];
+      dogs.push({
+        kind,
+        x: tileX * TILE + 4,
+        y: tileY * TILE - d.h,
+        w: d.w,
+        h: d.h,
+        vx: 0,
+        vy: 0,
+        dir: Math.random() < 0.5 ? -1 : 1,
+        onGround: false,
+        barkTimer: 0,
+        speed: d.speed,
+        body: d.body,
+        accent: d.accent,
+        bubble: d.bubble,
+        flap: Math.random() * 100,
+      });
+      Sound.place();
+    }
+
+    function spawnDog(tileX, tileY) { spawnAnimal('dog', tileX, tileY); }
+
+    function spawnEntity(kind, tileX, tileY) {
+      const defs = {
+        merchant: { shirt:'#3460d1', pants:'#1f2a53', text:'Hola, viajero' },
+        guard:    { shirt:'#55606d', pants:'#2a3444', text:'Todo en orden' },
+        doctor:   { shirt:'#ffffff', pants:'#79b7d9', text:'Respira hondo' },
+        builder:  { shirt:'#d08c2e', pants:'#6c4b23', text:'A construir' },
+        villager: { shirt:'#2e9b5f', pants:'#244d37', text:'Buen día' },
+      };
+      const d = defs[kind];
+      merchants.push({
+        kind,
+        x: tileX * TILE + 4,
+        y: tileY * TILE - 30,
+        w: 24,
+        h: 30,
+        greet: 0,
+        vx: Math.random() < 0.5 ? -0.55 : 0.55,
+        vy: 0,
+        onGround: false,
+        shirt: d.shirt,
+        pants: d.pants,
+        text: d.text,
+        walkTimer: 80 + Math.floor(Math.random() * 140),
+        actionTimer: 90 + Math.floor(Math.random() * 120),
+      });
+      Sound.place();
+    }
+
+    function spawnMerchant(tileX, tileY) { spawnEntity('merchant', tileX, tileY); }
+
+    function spawnTornado(tileX, tileY) {
+      tornadoes.push({ x: tileX * TILE + TILE / 2, y: tileY * TILE + TILE / 2, radius: 128, timer: 600, spin: 0 });
+      Sound.tornado();
+    }
+
+    function applyLightningStrike(tileX, tileY) {
+      const cx = tileX * TILE + TILE / 2;
+      const cy = tileY * TILE + TILE / 2;
+      for (let y = tileY - 1; y <= tileY + 1; y++) {
+        for (let x = tileX - 1; x <= tileX + 1; x++) {
+          const block = getBlock(x, y);
+          if (!block || block === 'BOUNDARY' || block === 'obsidian') continue;
+          if (Math.random() < 0.65) setBlock(x, y, null);
+        }
+      }
+      if (distanceSq(player.x + player.w/2, player.y + player.h/2, cx, cy) < (TILE * 3) ** 2) damagePlayer(10, 'lightning');
+      for (const a of dogs) {
+        if (distanceSq(a.x + a.w/2, a.y + a.h/2, cx, cy) < (TILE * 3) ** 2) a.vy = -4;
+      }
+      for (const n of merchants) {
+        if (distanceSq(n.x + n.w/2, n.y + n.h/2, cx, cy) < (TILE * 3) ** 2) n.vy = -4;
+      }
+      Sound.lightning();
+    }
+
+    function spawnMeteor(tileX, tileY) {
+      meteors.push({ x: tileX * TILE + TILE / 2 + (Math.random() * 40 - 20), y: -80, vx: (Math.random() - 0.5) * 0.6, vy: 5.6, size: 26, targetY: tileY * TILE + TILE / 2 });
+      Sound.tornado();
+    }
+
+    function spawnLightning(tileX, tileY) {
+      lightnings.push({ tileX, tileY, timer: 18 });
+      applyLightningStrike(tileX, tileY);
+    }
+
+    function spawnRain() {
+      rains.push({ timer: 600, seed: Math.random() * 9999 });
+      Sound.rain();
+    }
+
+    function spawnQuake() {
+      quakes.push({ timer: 420, power: 1 });
+      Sound.boom();
+    }
+
+    function spawnDisaster(kind, tileX, tileY) {
+      if (kind === 'tornado') return spawnTornado(tileX, tileY);
+      if (kind === 'meteor') return spawnMeteor(tileX, tileY);
+      if (kind === 'lightning') return spawnLightning(tileX, tileY);
+      if (kind === 'rain') return spawnRain();
+      if (kind === 'quake') return spawnQuake();
+    }
+
+    function spawnPickup(type, tileX, tileY) {
+      pickups.push({ type, x: tileX * TILE + 8, y: tileY * TILE + 8, w: 16, h: 16, bob: 0 });
+      Sound.place();
+    }
+
+    function spawnPickupLighter(tileX, tileY) { spawnPickup('lighter', tileX, tileY); }
+
+    function spawnExplosive(type, tileX, tileY) {
+      const defs = {
+        tnt:      { radius: 92, auto: false, fuse: 150, label:'TNT' },
+        mini_tnt: { radius: 58, auto: false, fuse: 110, label:'MINI' },
+        mega_tnt: { radius: 138, auto: false, fuse: 190, label:'MEGA' },
+        bomb:     { radius: 82, auto: true,  fuse: 120, label:'BOMB' },
+        mine:     { radius: 72, auto: true,  fuse: 9999, label:'MINE', mine: true },
+      };
+      const d = defs[type];
+      tnts.push({
+        type,
+        label: d.label,
+        x: tileX * TILE + 2,
+        y: tileY * TILE,
+        w: 28,
+        h: 28,
+        vy: 0,
+        vx: 0,
+        armed: d.auto,
+        fuse: d.auto ? d.fuse : 0,
+        defaultFuse: d.fuse,
+        radius: d.radius,
+        mine: !!d.mine,
+      });
+      Sound.place();
+      if (d.auto) Sound.tnt();
+    }
+
+    function spawnTNT(tileX, tileY) { spawnExplosive('tnt', tileX, tileY); }
+
+    function spawnFire(tileX, tileY, duration = 300) {
+      const existing = fires.find(f => f.tileX === tileX && f.tileY === tileY);
+      if (existing) {
+        existing.timer = Math.max(existing.timer, duration);
+        Sound.fire();
+        return;
+      }
+      fires.push({ tileX, tileY, x: tileX * TILE, y: tileY * TILE, timer: duration });
+      Sound.fire();
+    }
+
+    function armNearestTNT() {
+      let best = null;
+      let bestDist = 999999;
+      for (const tnt of tnts) {
+        if (tnt.mine || tnt.armed) continue;
+        const dx = (tnt.x + tnt.w/2) - (player.x + player.w/2);
+        const dy = (tnt.y + tnt.h/2) - (player.y + player.h/2);
+        const d = dx*dx + dy*dy;
+        if (d < bestDist && d < (TILE * 4.5) ** 2) {
+          best = tnt;
+          bestDist = d;
+        }
+      }
+      if (best) {
+        best.armed = true;
+        best.fuse = best.defaultFuse;
+        Sound.tnt();
+      }
+    }
+
+    function damagePlayer(amount, source = '') {
+      if (player.inventory.armorTimer > 0) amount *= 0.55;
+      player.health -= amount;
+      player.hurtFlash = 8;
+      if (source === 'lava' || source === 'fire') {
+        player.isBurning = true;
+        player.burnTimer = Math.max(player.burnTimer, 180);
+      }
+      if (source !== 'drown') Sound.hurt();
+      if (player.health <= 0) {
+        player.health = 0;
+        resetPlayer(true);
+      }
+    }
+
+    function applyExplosion(cx, cy, radiusPx) {
+      const radiusTiles = Math.ceil(radiusPx / TILE);
+      const tileCX = Math.floor(cx / TILE);
+      const tileCY = Math.floor(cy / TILE);
+
+      for (let ty = tileCY - radiusTiles; ty <= tileCY + radiusTiles; ty++) {
+        for (let tx = tileCX - radiusTiles; tx <= tileCX + radiusTiles; tx++) {
+          const block = getBlock(tx, ty);
+          if (!block || block === 'BOUNDARY') continue;
+          if (block === 'obsidian') continue;
+          const dx = tx * TILE + TILE/2 - cx;
+          const dy = ty * TILE + TILE/2 - cy;
+          if (dx*dx + dy*dy <= radiusPx * radiusPx) {
+            createParticle(tx * TILE + TILE/2, ty * TILE + TILE/2, materialById[block]?.color || '#fff', dx * 0.03, dy * 0.03 - 2, 50, 6);
+            setBlock(tx, ty, null);
+          }
+        }
+      }
+
+      const damageCircle = (obj, strength = 1) => {
+        const ox = obj.x + obj.w/2;
+        const oy = obj.y + obj.h/2;
+        const dx = ox - cx;
+        const dy = oy - cy;
+        const dist = Math.hypot(dx, dy);
+        if (dist < radiusPx) {
+          const force = (1 - dist / radiusPx) * 8 * strength;
+          obj.vx = (obj.vx || 0) + (dx / Math.max(1, dist)) * force;
+          obj.vy = -4 - force * 0.5;
+          return true;
+        }
+        return false;
+      };
+
+      if (damageCircle(player, 1.3)) damagePlayer(22, 'explosion');
+      dogs.forEach(d => damageCircle(d, 1));
+      merchants.forEach(m => damageCircle(m, 1));
+
+      for (const other of tnts) {
+        const dx = other.x + other.w/2 - cx;
+        const dy = other.y + other.h/2 - cy;
+        if (dx*dx + dy*dy < (radiusPx * 1.15) ** 2 && !other.armed) {
+          other.armed = true;
+          other.fuse = Math.min(45, other.defaultFuse);
+        }
+      }
+
+      for (let i = 0; i < 24; i++) {
+        const angle = (Math.PI * 2 * i) / 24;
+        createParticle(cx, cy, i % 2 ? '#ffcc66' : '#ff5e36', Math.cos(angle) * (2 + Math.random() * 3), Math.sin(angle) * (2 + Math.random() * 3), 36, 7);
+      }
+      Sound.boom();
+    }
+
+    function updateMouseTileFromEvent(e) {
+      const rect = canvas.getBoundingClientRect();
+      mouse.x = e.clientX - rect.left;
+      mouse.y = e.clientY - rect.top;
+      mouse.tileX = Math.floor((mouse.x + cameraX) / TILE);
+      mouse.tileY = Math.floor((mouse.y + cameraY) / TILE);
+      mouse.inside = true;
+    }
+
+    function canEditTile(tileX, tileY) {
+      if (tileX < 0 || tileX >= WORLD_COLS || tileY < 0 || tileY >= WORLD_ROWS) return false;
+      const tileRect = { x: tileX * TILE, y: tileY * TILE, w: TILE, h: TILE };
+      return !overlapRect(tileRect, player);
+    }
+
+    function eraseAtMouse() {
+      const { tileX, tileY } = mouse;
+      if (!canEditTile(tileX, tileY)) return;
+      setBlock(tileX, tileY, null);
+      Sound.erase();
+
+      const tileRect = { x: tileX * TILE, y: tileY * TILE, w: TILE, h: TILE };
+      const eraseFrom = arr => {
+        for (let i = arr.length - 1; i >= 0; i--) {
+          if (overlapRect(arr[i], tileRect)) arr.splice(i, 1);
+        }
+      };
+      eraseFrom(dogs);
+      eraseFrom(merchants);
+      eraseFrom(pickups);
+      eraseFrom(tnts);
+      eraseFrom(meteors);
+      for (let i = fires.length - 1; i >= 0; i--) {
+        if (fires[i].tileX === tileX && fires[i].tileY === tileY) fires.splice(i, 1);
+      }
+      for (let i = tornadoes.length - 1; i >= 0; i--) {
+        const t = tornadoes[i];
+        if (Math.floor(t.x / TILE) === tileX && Math.floor(t.y / TILE) === tileY) tornadoes.splice(i, 1);
+      }
+      for (let i = lightnings.length - 1; i >= 0; i--) {
+        if (lightnings[i].tileX === tileX && lightnings[i].tileY === tileY) lightnings.splice(i, 1);
+      }
+    }
+
+    function placeAtMouse() {
+      const { tileX, tileY } = mouse;
+      if (!canEditTile(tileX, tileY)) return;
+
+      const cat = state.activeCategory;
+      const selected = getSelectedTool();
+
+      if (cat === 'blocks') {
+        setBlock(tileX, tileY, selected);
+        Sound.place();
+        return;
+      }
+
+      if (cat === 'animals') {
+        if (selected === 'dog') return spawnAnimal('dog', tileX, tileY);
+        if (selected === 'cat') return spawnAnimal('cat', tileX, tileY);
+        if (selected === 'lion') return spawnAnimal('lion', tileX, tileY);
+        if (selected === 'rabbit') return spawnAnimal('rabbit', tileX, tileY);
+        if (selected === 'fish') return spawnAnimal('fish', tileX, tileY);
+      }
+
+      if (cat === 'entities') {
+        if (selected === 'merchant') return spawnEntity('merchant', tileX, tileY);
+        if (selected === 'guard') return spawnEntity('guard', tileX, tileY);
+        if (selected === 'doctor') return spawnEntity('doctor', tileX, tileY);
+        if (selected === 'builder') return spawnEntity('builder', tileX, tileY);
+        if (selected === 'villager') return spawnEntity('villager', tileX, tileY);
+      }
+
+      if (cat === 'disasters') return spawnDisaster(selected, tileX, tileY);
+      if (cat === 'items') return spawnPickup(selected, tileX, tileY);
+      if (cat === 'explosives') return spawnExplosive(selected, tileX, tileY);
+    }
+
+    function tryUseLighter() {
+      if (!player.inventory.hasLighter) return;
+      const dx = mouse.tileX - Math.floor((player.x + player.w/2) / TILE);
+      const dy = mouse.tileY - Math.floor((player.y + player.h/2) / TILE);
+      if (dx*dx + dy*dy > 25) return;
+      spawnFire(mouse.tileX, mouse.tileY, 300);
+    }
+
+    function handleJump() {
+      if (player.inWater) {
+        player.vy = Math.min(player.vy, -4.8);
+        Sound.splash();
+        return;
+      }
+      if (player.onGround) {
+        player.vy = JUMP_FORCE;
+        player.onGround = false;
+        Sound.jump();
+      }
+    }
+
+    playBtn.addEventListener('click', () => {
+      Sound.ensure();
+      Sound.playStart();
+      gameStarted = true;
+      startScreen.classList.add('hiddenUI');
+      creditsOverlay.style.display = 'none';
+      canvas.focus();
+    });
+
+    creditsBtn.addEventListener('click', () => {
+      Sound.ensure();
+      Sound.click();
+      creditsOverlay.style.display = 'flex';
+    });
+
+    closeCredits.addEventListener('click', () => {
+      Sound.click();
+      creditsOverlay.style.display = 'none';
+    });
+
+    creditsOverlay.addEventListener('click', (e) => {
+      if (e.target === creditsOverlay) {
+        Sound.click();
+        creditsOverlay.style.display = 'none';
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      const k = e.key.toLowerCase();
+      keys[k] = true;
+      if (e.code === 'Space' || k === 'w' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        if (!player.jumpPressed && gameStarted) {
+          handleJump();
+          player.jumpPressed = true;
+        }
+      }
+      if (!gameStarted) return;
+      if (k === 'r') resetPlayer(true);
+      if (k === 'f') tryUseLighter();
+      if (k === 'e') armNearestTNT();
+      if (k === 'shift') e.preventDefault();
+    });
+
+    document.addEventListener('keyup', (e) => {
+      const k = e.key.toLowerCase();
+      keys[k] = false;
+      if (e.code === 'Space' || k === 'w' || e.key === 'ArrowUp') {
+        player.jumpPressed = false;
+      }
+    });
+
+    canvas.addEventListener('mousemove', (e) => {
+      updateMouseTileFromEvent(e);
+      if (!gameStarted) return;
+      if (mouse.leftDown) {
+        if (state.editMode === 'place') placeAtMouse();
+        else eraseAtMouse();
+      }
+      if (mouse.rightDown) eraseAtMouse();
+    });
+    canvas.addEventListener('mouseleave', () => { mouse.inside = false; });
+    canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    canvas.addEventListener('dragstart', (e) => e.preventDefault());
+    canvas.addEventListener('mousedown', (e) => {
+      if (!gameStarted) return;
+      Sound.ensure();
+      canvas.focus();
+      updateMouseTileFromEvent(e);
+      if (e.button === 0) {
+        mouse.leftDown = true;
+        if (state.editMode === 'place') placeAtMouse();
+        else eraseAtMouse();
+      } else if (e.button === 2) {
+        mouse.rightDown = true;
+        eraseAtMouse();
+      }
+    });
+    window.addEventListener('mouseup', (e) => {
+      if (e.button === 0) mouse.leftDown = false;
+      if (e.button === 2) mouse.rightDown = false;
+    });
+
+    placeModeBtn.addEventListener('click', () => {
+      Sound.click();
+      state.editMode = 'place';
+      placeModeBtn.classList.add('active');
+      eraseModeBtn.classList.remove('active');
+    });
+    eraseModeBtn.addEventListener('click', () => {
+      Sound.click();
+      state.editMode = 'erase';
+      eraseModeBtn.classList.add('active');
+      placeModeBtn.classList.remove('active');
+    });
+
+    function buildTabsUI() {
+      categoryTabs.innerHTML = '';
+      for (const cat of categories) {
+        const btn = document.createElement('button');
+        btn.className = 'tabBtn' + (state.activeCategory === cat.id ? ' active' : '');
+        btn.textContent = cat.label;
+        btn.addEventListener('click', () => {
+          Sound.click();
+          state.activeCategory = cat.id;
+          buildTabsUI();
+          buildMaterialUI();
+        });
+        categoryTabs.appendChild(btn);
+      }
+    }
+
+    function buildMaterialUI() {
+      materialGrid.innerHTML = '';
+      const list = toolsByCategory[state.activeCategory];
+      list.forEach((item, index) => {
+        const btn = document.createElement('button');
+        btn.className = 'materialBtn' + (state.selected[state.activeCategory] === item.id ? ' selected' : '');
+
+        let swatch = '';
+        let desc = '';
+        if (state.activeCategory === 'blocks') {
+          const mat = materialById[item.id];
+          const bg = item.id === 'water'
+            ? 'linear-gradient(#84caff 0 25%, #2f8fff 25% 100%)'
+            : item.id === 'lava'
+            ? 'linear-gradient(#ffd25f 0 25%, #ff642e 25% 100%)'
+            : `linear-gradient(${mat.top || mat.color} 0 25%, ${mat.color} 25% 100%)`;
+          swatch = `<div class="swatch" style="background:${bg};"></div>`;
+          desc = item.id === 'water' ? 'Bloque líquido' : item.id === 'lava' ? 'Líquido dañino' : 'Bloque sólido';
+        } else {
+          swatch = `<div class="swatch" style="background:#2c3550;">${item.icon || '•'}</div>`;
+          desc = item.desc || 'Ejemplo funcional';
+        }
+
+        btn.innerHTML = `
+          ${swatch}
+          <div>
+            <div style="font-weight:700">${index + 1}. ${item.name}</div>
+            <div style="font-size:12px;color:#aab3c7">${desc}</div>
+          </div>
+        `;
+        btn.addEventListener('click', () => {
+          Sound.click();
+          state.selected[state.activeCategory] = item.id;
+          buildMaterialUI();
+        });
+        materialGrid.appendChild(btn);
+      });
+    }
+
+    buildTabsUI();
+    buildMaterialUI();
+
+    function updateFluids() {
+      const next = world.map(row => row.slice());
+      const toActivate = [];
+
+      const canOccupy = (x, y) => {
+        if (x < 0 || x >= WORLD_COLS || y < 0 || y >= WORLD_ROWS) return false;
+        return world[y][x] === null;
+      };
+
+      for (let y = WORLD_ROWS - 2; y >= 0; y--) {
+        for (let x = 0; x < WORLD_COLS; x++) {
+          const block = world[y][x];
+          if (!block) continue;
+          if (!isWaterId(block) && !isLavaId(block)) continue;
+
+          const activeId = baseLiquidId(block);
+          const stillId = stillLiquidId(block);
+          const below = getBlock(x, y + 1);
+          const left = getBlock(x - 1, y);
+          const right = getBlock(x + 1, y);
+
+          const belowEmpty = canOccupy(x, y + 1);
+          const leftSupported = getBlock(x - 1, y + 1) !== null && getBlock(x - 1, y + 1) !== 'BOUNDARY';
+          const rightSupported = getBlock(x + 1, y + 1) !== null && getBlock(x + 1, y + 1) !== 'BOUNDARY';
+          const leftEmpty = canOccupy(x - 1, y) && leftSupported;
+          const rightEmpty = canOccupy(x + 1, y) && rightSupported;
+
+          if (belowEmpty) {
+            next[y][x] = stillId;
+            next[y + 1][x] = activeId;
+            continue;
+          }
+
+          if (leftEmpty || rightEmpty) {
+            next[y][x] = stillId;
+            const goLeft = ((x + y + frameCount) % 2 === 0);
+            if (goLeft && leftEmpty) next[y][x - 1] = activeId;
+            else if (!goLeft && rightEmpty) next[y][x + 1] = activeId;
+            else if (leftEmpty) next[y][x - 1] = activeId;
+            else if (rightEmpty) next[y][x + 1] = activeId;
+            continue;
+          }
+
+          next[y][x] = stillId;
+
+          if (block === 'water_still' || block === 'lava_still') {
+            if (below === null || (left === null && leftSupported) || (right === null && rightSupported)) {
+              toActivate.push([x, y, activeId]);
+            }
+          }
+        }
+      }
+
+      for (const [x, y, activeId] of toActivate) next[y][x] = activeId;
+      for (let y = 0; y < WORLD_ROWS; y++) for (let x = 0; x < WORLD_COLS; x++) world[y][x] = next[y][x];
+    }
+
+    function updateStatusEffects() {
+      const wasInWater = player.inWater;
+      player.inWater = rectTouchesPredicate(player.x, player.y, player.w, player.h, (block) => isWaterId(block));
+      player.inLava = rectTouchesPredicate(player.x, player.y, player.w, player.h, (block) => isLavaId(block));
+
+      if (!wasInWater && player.inWater) Sound.splash();
+
+      const headY = player.y + 3;
+      const headLeft = Math.floor((player.x + 4) / TILE);
+      const headRight = Math.floor((player.x + player.w - 5) / TILE);
+      const headTileY = Math.floor(headY / TILE);
+      const leftBlock = getBlock(headLeft, headTileY);
+      const rightBlock = getBlock(headRight, headTileY);
+      player.headUnderWater = isWaterId(leftBlock) || isWaterId(rightBlock);
+
+      const maxBubbles = getMaxBubbles();
+      if (player.bubbles > maxBubbles) player.bubbles = maxBubbles;
+
+      if (player.headUnderWater) {
+        player.bubbleFrame++;
+        if (player.bubbles > 0 && player.bubbleFrame >= 60) {
+          player.bubbles--;
+          player.bubbleFrame = 0;
+        }
+        if (player.bubbles <= 0) {
+          player.drownFrame++;
+          if (player.drownFrame >= 30) {
+            damagePlayer(4, 'drown');
+            player.drownFrame = 0;
+          }
+        }
+      } else {
+        player.bubbles = maxBubbles;
+        player.bubbleFrame = 0;
+        player.drownFrame = 0;
+      }
+
+      if (player.inLava && frameCount % 10 === 0) damagePlayer(4, 'lava');
+      if (player.isBurning) {
+        if (frameCount % 20 === 0) damagePlayer(2, 'fire');
+        player.burnTimer--;
+        if (player.burnTimer <= 0 || player.inWater) {
+          player.isBurning = false;
+          player.burnTimer = 0;
+        }
+      }
+      if (player.hurtFlash > 0) player.hurtFlash--;
+    }
+
+    function updatePlayer() {
+      updateStatusEffects();
+
+      if (player.inventory.armorTimer > 0) player.inventory.armorTimer--;
+      if (player.inventory.bootsTimer > 0) player.inventory.bootsTimer--;
+      if (player.inventory.oxygenTimer > 0) player.inventory.oxygenTimer--;
+
+      const movingLeft = keys['a'] || keys['arrowleft'];
+      const movingRight = keys['d'] || keys['arrowright'];
+      const holdingShift = keys['shift'];
+      const boostRun = player.inventory.bootsTimer > 0 ? 1.25 : 1;
+      const currentMoveSpeed = player.inWater ? 2.1 : ((holdingShift ? RUN_SPEED : MOVE_SPEED) * boostRun);
+
+      player.vx = 0;
+      if (movingLeft) player.vx = -currentMoveSpeed;
+      if (movingRight) player.vx = currentMoveSpeed;
+
+      if (player.inWater) {
+        player.vy += 0.08;
+        if (holdingShift) player.vy -= 0.33;
+        if (!movingLeft && !movingRight && !holdingShift) player.vy *= 0.96;
+        player.vy = Math.max(-4.4, Math.min(3.2, player.vy));
+      } else {
+        player.vy += GRAVITY;
+        if (player.vy > 12) player.vy = 12;
+      }
+
+      player.x += player.vx;
+      if (rectIntersectsSolid(player.x, player.y, player.w, player.h)) {
+        if (player.vx > 0) player.x = Math.floor((player.x + player.w - 1) / TILE) * TILE - player.w;
+        else if (player.vx < 0) player.x = Math.floor(player.x / TILE + 1) * TILE;
+      }
+
+      player.y += player.vy;
+      player.onGround = false;
+      if (rectIntersectsSolid(player.x, player.y, player.w, player.h)) {
+        if (player.vy > 0) {
+          player.y = Math.floor((player.y + player.h - 1) / TILE) * TILE - player.h;
+          player.vy = 0;
+          player.onGround = !player.inWater;
+        } else if (player.vy < 0) {
+          player.y = Math.floor(player.y / TILE + 1) * TILE;
+          player.vy = 0;
+        }
+      }
+
+      if (player.y > WORLD_ROWS * TILE + 300) resetPlayer(true);
+    }
+
+    function updateDogs() {
+      for (const dog of dogs) {
+        if (dog.kind === 'fish') {
+          const inWater = rectTouchesPredicate(dog.x, dog.y, dog.w, dog.h, (block) => isWaterId(block));
+          if (inWater) {
+            dog.flap += 0.12;
+            dog.vy = Math.sin(dog.flap) * 0.45;
+            dog.x += dog.dir * dog.speed;
+            dog.y += dog.vy;
+            const aheadX = dog.dir > 0 ? dog.x + dog.w + 2 : dog.x - 2;
+            const centerY = dog.y + dog.h / 2;
+            const nextTileX = Math.floor(aheadX / TILE);
+            const nextTileY = Math.floor(centerY / TILE);
+            if (!isWaterId(getBlock(nextTileX, nextTileY)) || Math.random() < 0.01) dog.dir *= -1;
+          } else {
+            dog.vy += 0.28;
+            dog.y += dog.vy;
+            dog.x += dog.dir * 0.6;
+            if (rectIntersectsSolid(dog.x, dog.y, dog.w, dog.h)) {
+              dog.y = Math.floor((dog.y + dog.h - 1) / TILE) * TILE - dog.h;
+              dog.vy = -2.2;
+              dog.dir *= -1;
+            }
+          }
+        } else {
+          dog.vy += 0.32;
+          if (dog.vy > 9) dog.vy = 9;
+          dog.vx = dog.dir * dog.speed;
+
+          const aheadX = dog.dir > 0 ? dog.x + dog.w + 2 : dog.x - 2;
+          const footY = dog.y + dog.h + 2;
+          const wallTileX = Math.floor(aheadX / TILE);
+          const midTileY = Math.floor((dog.y + dog.h/2) / TILE);
+          const groundTileY = Math.floor(footY / TILE);
+          const hasWall = isSolidAt(wallTileX, midTileY);
+          const hasGroundAhead = isSolidAt(wallTileX, groundTileY);
+          if (hasWall || !hasGroundAhead) dog.dir *= -1;
+
+          if (dog.kind === 'rabbit' && dog.onGround && frameCount % 55 === 0) dog.vy = -4.2;
+
+          dog.x += dog.dir * dog.speed;
+          if (rectIntersectsSolid(dog.x, dog.y, dog.w, dog.h)) dog.dir *= -1;
+
+          dog.y += dog.vy;
+          dog.onGround = false;
+          if (rectIntersectsSolid(dog.x, dog.y, dog.w, dog.h)) {
+            if (dog.vy > 0) {
+              dog.y = Math.floor((dog.y + dog.h - 1) / TILE) * TILE - dog.h;
+              dog.vy = 0;
+              dog.onGround = true;
+            }
+          }
+        }
+
+        if (dog.kind === 'lion' && overlapRect(dog, player) && frameCount % 18 === 0) damagePlayer(3, 'lion');
+        if (player.x < dog.x + 90 && player.x + player.w > dog.x - 90 && frameCount % 180 === 0) dog.barkTimer = 60;
+        if (dog.barkTimer > 0) dog.barkTimer--;
+      }
+    }
+
+    function updateMerchants() {
+      for (const m of merchants) {
+        m.greet = Math.abs((m.x + m.w/2) - (player.x + player.w/2)) < 70 && Math.abs((m.y + m.h/2) - (player.y + player.h/2)) < 60 ? 1 : 0;
+
+        m.walkTimer--;
+        if (m.walkTimer <= 0) {
+          m.walkTimer = 70 + Math.floor(Math.random() * 150);
+          if (Math.random() < 0.25) m.vx = 0;
+          else m.vx = Math.random() < 0.5 ? -0.55 : 0.55;
+        }
+
+        m.actionTimer--;
+        if (m.actionTimer <= 0) {
+          m.actionTimer = 100 + Math.floor(Math.random() * 120);
+          if (m.kind === 'builder' && m.onGround) {
+            const dir = Math.sign(m.vx) || 1;
+            const tx = Math.floor((m.x + (dir > 0 ? m.w + 2 : -2)) / TILE);
+            const ty = Math.floor((m.y + m.h - 2) / TILE);
+            if (getBlock(tx, ty) === null && getBlock(tx, ty + 1) !== null) setBlock(tx, ty, 'wood');
+          }
+        }
+
+        if (m.kind === 'doctor' && m.greet && frameCount % 45 === 0) {
+          player.health = Math.min(MAX_HEALTH, player.health + 1.2);
+        }
+        if (m.kind === 'guard') {
+          for (const a of dogs) {
+            if (a.kind === 'lion' && distanceSq(a.x, a.y, m.x, m.y) < (TILE * 3) ** 2) {
+              a.dir *= -1;
+              if (frameCount % 40 === 0) createParticle(a.x, a.y, '#ffffff', 0, -1.4, 20, 3);
+            }
+          }
+        }
+
+        m.vy += 0.32;
+        if (m.vy > 8) m.vy = 8;
+
+        const dir = Math.sign(m.vx) || 1;
+        const aheadX = dir > 0 ? m.x + m.w + 2 : m.x - 2;
+        const wallTileX = Math.floor(aheadX / TILE);
+        const midTileY = Math.floor((m.y + m.h/2) / TILE);
+        const footTileY = Math.floor((m.y + m.h + 2) / TILE);
+        const hasWall = isSolidAt(wallTileX, midTileY);
+        const hasGroundAhead = isSolidAt(wallTileX, footTileY);
+        if (m.vx !== 0 && (hasWall || !hasGroundAhead)) m.vx *= -1;
+
+        m.x += m.vx;
+        if (rectIntersectsSolid(m.x, m.y, m.w, m.h)) {
+          m.x -= m.vx;
+          m.vx *= -1;
+        }
+
+        m.y += m.vy;
+        m.onGround = false;
+        if (rectIntersectsSolid(m.x, m.y, m.w, m.h)) {
+          if (m.vy > 0) {
+            m.y = Math.floor((m.y + m.h - 1) / TILE) * TILE - m.h;
+            m.vy = 0;
+            m.onGround = true;
+          } else if (m.vy < 0) {
+            m.y = Math.floor(m.y / TILE + 1) * TILE;
+            m.vy = 0;
+          }
+        }
+      }
+    }
+
+    function updatePickups() {
+      for (let i = pickups.length - 1; i >= 0; i--) {
+        const p = pickups[i];
+        p.bob += 0.08;
+        if (overlapRect(p, player)) {
+          if (p.type === 'lighter') player.inventory.hasLighter = true;
+          else if (p.type === 'medkit') player.health = Math.min(MAX_HEALTH, player.health + 35);
+          else if (p.type === 'armor') player.inventory.armorTimer = 1800;
+          else if (p.type === 'boots') player.inventory.bootsTimer = 1800;
+          else if (p.type === 'oxygen') {
+            player.inventory.oxygenTimer = 1800;
+            player.bubbles = getMaxBubbles();
+          }
+          pickups.splice(i, 1);
+          Sound.pickup();
+        }
+      }
+    }
+
+    function updateFires() {
+      for (let i = fires.length - 1; i >= 0; i--) {
+        const f = fires[i];
+        f.timer--;
+        const rect = { x: f.x + 4, y: f.y + 4, w: TILE - 8, h: TILE - 8 };
+        if (overlapRect(rect, player) && frameCount % 12 === 0) damagePlayer(2, 'fire');
+        for (const tnt of tnts) {
+          if (!tnt.armed && overlapRect(rect, tnt)) {
+            tnt.armed = true;
+            tnt.fuse = Math.min(120, tnt.defaultFuse);
+            Sound.tnt();
+          }
+        }
+        const block = getBlock(f.tileX, f.tileY);
+        if (block === 'wood' || block === 'log' || block === 'leaf') {
+          if (frameCount % 30 === 0) setBlock(f.tileX, f.tileY, 'lava_still');
+        }
+        if (f.timer <= 0) fires.splice(i, 1);
+      }
+    }
+
+    function updateTNTs() {
+      for (let i = tnts.length - 1; i >= 0; i--) {
+        const t = tnts[i];
+        if (!t.mine) {
+          t.vy += 0.35;
+          if (t.vy > 8) t.vy = 8;
+          t.y += t.vy;
+          if (rectIntersectsSolid(t.x, t.y, t.w, t.h)) {
+            t.y = Math.floor((t.y + t.h - 1) / TILE) * TILE - t.h;
+            t.vy = 0;
+          }
+        }
+
+        if (t.mine) {
+          const armedRect = { x: t.x, y: t.y, w: t.w, h: t.h };
+          const touched = overlapRect(armedRect, player) || dogs.some(a => overlapRect(armedRect, a)) || merchants.some(n => overlapRect(armedRect, n));
+          if (touched) {
+            applyExplosion(t.x + t.w/2, t.y + t.h/2, t.radius);
+            tnts.splice(i, 1);
+            continue;
+          }
+        }
+
+        if (t.armed && !t.mine) {
+          t.fuse--;
+          if (t.fuse % 30 === 0) Sound.tnt();
+          if (t.fuse <= 0) {
+            applyExplosion(t.x + t.w/2, t.y + t.h/2, t.radius);
+            tnts.splice(i, 1);
+          }
+        }
+      }
+    }
+
+    function updateTornadoes() {
+      for (let i = tornadoes.length - 1; i >= 0; i--) {
+        const t = tornadoes[i];
+        t.timer--;
+        t.spin += 0.25;
+        if (frameCount % 16 === 0) Sound.tornado();
+
+        const affectObj = (obj) => {
+          const ox = obj.x + obj.w/2;
+          const oy = obj.y + obj.h/2;
+          const dx = t.x - ox;
+          const dy = t.y - oy;
+          const dist = Math.hypot(dx, dy);
+          if (dist < t.radius) {
+            const force = (1 - dist / t.radius) * 0.65;
+            obj.vx = (obj.vx || 0) + (dx / Math.max(1, dist)) * force + Math.sin(t.spin + dist * 0.02) * 0.7;
+            obj.vy = (obj.vy || 0) - force * 0.75;
+          }
+        };
+
+        affectObj(player);
+        dogs.forEach(affectObj);
+        merchants.forEach(affectObj);
+        tnts.forEach(affectObj);
+
+        if (frameCount % 2 === 0) {
+          const tileCX = Math.floor(t.x / TILE);
+          const tileCY = Math.floor(t.y / TILE);
+          const rad = Math.ceil(t.radius / TILE);
+          for (let ty = tileCY - rad; ty <= tileCY + rad; ty++) {
+            for (let tx = tileCX - rad; tx <= tileCX + rad; tx++) {
+              const block = getBlock(tx, ty);
+              if (!block || block === 'BOUNDARY') continue;
+              if (block === 'obsidian') continue;
+              if (isWaterId(block) || isLavaId(block)) continue;
+              const dx = tx * TILE + TILE/2 - t.x;
+              const dy = ty * TILE + TILE/2 - t.y;
+              const dist = Math.hypot(dx, dy);
+              if (dist < t.radius && Math.random() < 0.08) {
+                setBlock(tx, ty, null);
+                const ang = Math.atan2(dy, dx) + Math.PI/2;
+                createParticle(tx * TILE + TILE/2, ty * TILE + TILE/2, materialById[block]?.color || '#ddd', Math.cos(ang) * 3, Math.sin(ang) * 3 - 1.5, 70, 7);
+              }
+            }
+          }
+        }
+
+        if (t.timer <= 0) tornadoes.splice(i, 1);
+      }
+    }
+
+    function updateMeteors() {
+      for (let i = meteors.length - 1; i >= 0; i--) {
+        const m = meteors[i];
+        m.x += m.vx;
+        m.y += m.vy;
+        m.vy += 0.08;
+        createParticle(m.x, m.y, '#ffb45a', (Math.random() - 0.5) * 0.7, 1.2 + Math.random() * 0.8, 20, 4);
+        const hitGround = rectIntersectsSolid(m.x - m.size/2, m.y - m.size/2, m.size, m.size) || m.y >= m.targetY;
+        if (hitGround) {
+          applyExplosion(m.x, m.y, 86);
+          meteors.splice(i, 1);
+        }
+      }
+    }
+
+    function updateLightnings() {
+      for (let i = lightnings.length - 1; i >= 0; i--) {
+        lightnings[i].timer--;
+        if (lightnings[i].timer <= 0) lightnings.splice(i, 1);
+      }
+    }
+
+    function updateRains() {
+      for (let i = rains.length - 1; i >= 0; i--) {
+        const r = rains[i];
+        r.timer--;
+        if (frameCount % 15 === 0) Sound.rain();
+        if (frameCount % 10 === 0 && fires.length > 0) fires.shift();
+        if (player.isBurning && frameCount % 20 === 0) {
+          player.burnTimer -= 15;
+          if (player.burnTimer <= 0) {
+            player.isBurning = false;
+            player.burnTimer = 0;
+          }
+        }
+        if (r.timer <= 0) rains.splice(i, 1);
+      }
+    }
+
+    function updateQuakes() {
+      cameraShakeX = 0;
+      cameraShakeY = 0;
+      for (let i = quakes.length - 1; i >= 0; i--) {
+        const q = quakes[i];
+        q.timer--;
+        cameraShakeX = (Math.random() - 0.5) * 8;
+        cameraShakeY = (Math.random() - 0.5) * 4;
+        if (frameCount % 8 === 0) {
+          const tx = Math.floor(Math.random() * WORLD_COLS);
+          for (let ty = 0; ty < WORLD_ROWS; ty++) {
+            const block = getBlock(tx, ty);
+            if (block && block !== 'obsidian' && !isWaterId(block) && !isLavaId(block)) {
+              setBlock(tx, ty, null);
+              createParticle(tx * TILE + TILE/2, ty * TILE + TILE/2, materialById[block]?.color || '#ddd', (Math.random()-0.5)*2, -2, 40, 6);
+              break;
+            }
+          }
+        }
+        if (q.timer <= 0) quakes.splice(i, 1);
+      }
+    }
+
+    function updateParticles() {
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08;
+        p.life--;
+        if (p.life <= 0) particles.splice(i, 1);
+      }
+    }
+
+    function updateCamera() {
+      cameraX = player.x - canvas.width * 0.42;
+      cameraY = player.y - canvas.height * 0.55;
+      const maxCamX = WORLD_COLS * TILE - canvas.width;
+      const maxCamY = WORLD_ROWS * TILE - canvas.height;
+      cameraX = Math.max(0, Math.min(maxCamX, cameraX));
+      cameraY = Math.max(0, Math.min(maxCamY, cameraY));
+      cameraX += cameraShakeX;
+      cameraY += cameraShakeY;
+    }
+
+    function roundRectFill(x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawCloud(x, y, s) {
+      ctx.fillStyle = 'rgba(255,255,255,0.72)';
+      const parts = [[0,0,42,24],[22,-10,40,28],[46,0,44,24],[18,8,60,24]];
+      for (const [px, py, w, h] of parts) roundRectFill(x + px*s, y + py*s, w*s, h*s, 12*s);
+    }
+
+    function drawSky() {
+      const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+      gradient.addColorStop(0, '#69c8ff');
+      gradient.addColorStop(0.6, '#a9e7ff');
+      gradient.addColorStop(1, '#dff7ff');
+      ctx.fillStyle = gradient;
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      const cloudOffsets = [0, 500, 1050, 1620, 2200, 2800, 3400, 4000, 4700, 5600];
+      for (const baseX of cloudOffsets) {
+        const x = baseX - cameraX * 0.2;
+        const y = 90 + ((baseX * 13) % 130) - cameraY * 0.05;
+        drawCloud(x, y, 0.9 + (baseX % 3) * 0.22);
+      }
+    }
+
+    function drawBlock(tileX, tileY, mat) {
+      const x = tileX * TILE - cameraX;
+      const y = tileY * TILE - cameraY;
+
+      if (isWaterId(mat.id)) {
+        ctx.fillStyle = mat.id === 'water' ? 'rgba(47,143,255,0.78)' : 'rgba(47,143,255,0.66)';
+        ctx.fillRect(x, y + 2, TILE, TILE - 2);
+        ctx.fillStyle = '#a8dcff';
+        ctx.fillRect(x, y + 2, TILE, 4);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillRect(x + 4, y + 10, TILE - 8, 2);
+        ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+        ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
+        return;
+      }
+
+      if (isLavaId(mat.id)) {
+        ctx.fillStyle = mat.id === 'lava' ? '#ff6b2e' : '#f75a21';
+        ctx.fillRect(x, y + 2, TILE, TILE - 2);
+        ctx.fillStyle = '#ffd05e';
+        ctx.fillRect(x, y + 2, TILE, 5);
+        ctx.fillStyle = '#ff9f1a';
+        ctx.fillRect(x + 4, y + 12, TILE - 8, 4);
+        ctx.fillStyle = 'rgba(255,255,255,0.12)';
+        ctx.fillRect(x + 7, y + 8, TILE - 14, 2);
+        ctx.strokeStyle = 'rgba(0,0,0,0.12)';
+        ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
+        return;
+      }
+
+      if (mat.id === 'log') {
+        ctx.fillStyle = '#7a4d27';
+        ctx.fillRect(x, y, TILE, TILE);
+        ctx.fillStyle = '#a56c3f';
+        ctx.fillRect(x + 10, y, 12, TILE);
+        ctx.fillStyle = '#5d371a';
+        ctx.fillRect(x + 4, y, 3, TILE);
+        ctx.fillRect(x + 25, y, 3, TILE);
+        ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+        ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
+        return;
+      }
+
+      ctx.fillStyle = mat.color;
+      ctx.fillRect(x, y, TILE, TILE);
+      ctx.fillStyle = mat.top || mat.color;
+      ctx.fillRect(x, y, TILE, 6);
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+      ctx.fillRect(x + 2, y + 8, TILE - 4, 2);
+      ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+      ctx.strokeRect(x + 0.5, y + 0.5, TILE - 1, TILE - 1);
+    }
+
+    function drawWorld() {
+      const startCol = Math.max(0, Math.floor(cameraX / TILE));
+      const endCol = Math.min(WORLD_COLS - 1, Math.ceil((cameraX + canvas.width) / TILE));
+      const startRow = Math.max(0, Math.floor(cameraY / TILE));
+      const endRow = Math.min(WORLD_ROWS - 1, Math.ceil((cameraY + canvas.height) / TILE));
+      for (let y = startRow; y <= endRow; y++) {
+        for (let x = startCol; x <= endCol; x++) {
+          const blockId = world[y][x];
+          if (!blockId) continue;
+          drawBlock(x, y, materialById[blockId]);
+        }
+      }
+    }
+
+    function drawPlayer() {
+      const x = player.x - cameraX;
+      const y = player.y - cameraY;
+
+      if (player.isBurning) {
+        ctx.fillStyle = 'rgba(255,120,20,0.35)';
+        ctx.fillRect(x - 5, y - 4, player.w + 10, player.h + 8);
+      }
+      if (player.inWater) {
+        ctx.fillStyle = 'rgba(72,170,255,0.16)';
+        ctx.fillRect(x - 4, y - 3, player.w + 8, player.h + 6);
+      }
+      if (player.hurtFlash > 0) {
+        ctx.fillStyle = 'rgba(255,90,90,0.25)';
+        ctx.fillRect(x - 4, y - 4, player.w + 8, player.h + 8);
+      }
+
+      ctx.fillStyle = '#2a2a34';
+      ctx.fillRect(x + 5, y + 4, 12, 10);
+      ctx.fillStyle = player.hurtFlash > 0 ? '#ff7d8d' : player.color;
+      ctx.fillRect(x + 3, y + 14, 16, 14);
+      ctx.fillStyle = '#ffe0bd';
+      ctx.fillRect(x + 5, y, 12, 12);
+      ctx.fillStyle = '#1d1d26';
+      ctx.fillRect(x + 7, y + 4, 2, 2);
+      ctx.fillRect(x + 13, y + 4, 2, 2);
+      ctx.fillStyle = '#ffffff22';
+      ctx.fillRect(x + 4, y + 15, 4, 10);
+
+      if (player.inWater) {
+        for (let i = 0; i < player.bubbles; i++) {
+          const bx = x - 6 + i * 10;
+          const by = y - 12;
+          ctx.fillStyle = 'rgba(180,235,255,0.9)';
+          ctx.beginPath();
+          ctx.arc(bx, by, 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.7)';
+          ctx.fillRect(bx - 1, by - 2, 1, 1);
+        }
+      }
+    }
+
+    function drawDogs() {
+      ctx.font = '12px Arial';
+      for (const dog of dogs) {
+        const x = dog.x - cameraX;
+        const y = dog.y - cameraY;
+        ctx.fillStyle = dog.body;
+        ctx.fillRect(x + 2, y + 6, dog.w - 4, dog.h - 8);
+        ctx.fillStyle = dog.accent;
+        if (dog.kind === 'lion') {
+          ctx.fillRect(x + dog.w - 12, y + 1, 10, 10);
+          ctx.fillRect(x + dog.w - 15, y - 1, 14, 14);
+        } else if (dog.kind === 'fish') {
+          ctx.fillRect(x + dog.w - 8, y + 2, 6, dog.h - 4);
+          ctx.fillRect(x + 1, y + 3, 6, dog.h - 6);
+        } else {
+          ctx.fillRect(x + dog.w - 10, y + 2, 8, 8);
+        }
+        ctx.fillStyle = '#1d1d26';
+        ctx.fillRect(x + dog.w - 7, y + 5, 2, 2);
+        if (dog.kind !== 'fish') {
+          ctx.fillRect(x + 4, y + dog.h - 4, 3, 4);
+          ctx.fillRect(x + dog.w - 8, y + dog.h - 4, 3, 4);
+        }
+        if (dog.barkTimer > 0) {
+          ctx.fillStyle = 'rgba(0,0,0,0.45)';
+          roundRectFill(x - 4, y - 16, 42, 12, 6);
+          ctx.fillStyle = '#fff';
+          ctx.fillText(dog.bubble, x + 4, y - 7);
+        }
+      }
+    }
+
+    function drawMerchants() {
+      ctx.font = '12px Arial';
+      for (const m of merchants) {
+        const x = m.x - cameraX;
+        const y = m.y - cameraY;
+        ctx.fillStyle = '#4a2d20';
+        ctx.fillRect(x + 6, y, 12, 12);
+        ctx.fillStyle = '#f1c79d';
+        ctx.fillRect(x + 6, y + 2, 12, 10);
+        ctx.fillStyle = m.shirt;
+        ctx.fillRect(x + 4, y + 12, 16, 14);
+        ctx.fillStyle = m.pants;
+        ctx.fillRect(x + 6, y + 26, 4, 4);
+        ctx.fillRect(x + 14, y + 26, 4, 4);
+        ctx.fillStyle = '#1d1d26';
+        ctx.fillRect(x + 8, y + 5, 2, 2);
+        ctx.fillRect(x + 14, y + 5, 2, 2);
+        if (m.greet) {
+          ctx.fillStyle = 'rgba(0,0,0,0.45)';
+          roundRectFill(x - 24, y - 16, 82, 12, 6);
+          ctx.fillStyle = '#fff';
+          ctx.fillText(m.text, x - 14, y - 7);
+        }
+      }
+    }
+
+    function drawTornadoes() {
+      for (const t of tornadoes) {
+        const x = t.x - cameraX;
+        const y = t.y - cameraY;
+
+        for (let i = 0; i < 12; i++) {
+          const progress = i / 11;
+          const width = 18 + progress * 46;
+          const wobble = Math.sin(t.spin + i * 0.55) * (8 + progress * 8);
+          const py = y - i * 16;
+          ctx.strokeStyle = `rgba(210,235,255,${0.16 + progress * 0.24})`;
+          ctx.lineWidth = 5 + progress * 2;
+          ctx.beginPath();
+          ctx.ellipse(x + wobble, py, width, 7 + progress * 4, 0, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        ctx.fillStyle = 'rgba(220,240,255,0.08)';
+        ctx.beginPath();
+        ctx.ellipse(x, y - 70, 32, 120, 0, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function drawMeteors() {
+      for (const m of meteors) {
+        const x = m.x - cameraX;
+        const y = m.y - cameraY;
+        ctx.fillStyle = '#6b4a35';
+        ctx.beginPath();
+        ctx.arc(x, y, m.size / 2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#ffb45a';
+        ctx.fillRect(x - 3, y - 3, 6, 6);
+      }
+    }
+
+    function drawLightnings() {
+      for (const l of lightnings) {
+        const x = l.tileX * TILE + TILE / 2 - cameraX;
+        const y = l.tileY * TILE + TILE / 2 - cameraY;
+        ctx.strokeStyle = `rgba(255,255,180,${0.4 + (l.timer / 18) * 0.5})`;
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(x, y - 260);
+        ctx.lineTo(x - 10, y - 180);
+        ctx.lineTo(x + 8, y - 110);
+        ctx.lineTo(x - 6, y - 40);
+        ctx.lineTo(x, y);
+        ctx.stroke();
+      }
+    }
+
+    function drawRain() {
+      for (const r of rains) {
+        for (let i = 0; i < 120; i++) {
+          const x = ((i * 67 + Math.floor(frameCount * 8) + Math.floor(r.seed)) % (canvas.width + 80)) - 40;
+          const y = ((i * 47 + Math.floor(frameCount * 18)) % (canvas.height + 80)) - 40;
+          ctx.strokeStyle = 'rgba(180,220,255,0.45)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x - 6, y + 12);
+          ctx.stroke();
+        }
+      }
+    }
+
+    function drawPickups() {
+      for (const p of pickups) {
+        const x = p.x - cameraX;
+        const y = p.y - cameraY + Math.sin(p.bob) * 2;
+        ctx.fillStyle = '#1e232e';
+        ctx.fillRect(x, y, 16, 16);
+        if (p.type === 'lighter') {
+          ctx.fillStyle = '#ffba47'; ctx.fillRect(x + 4, y + 5, 8, 8);
+          ctx.fillStyle = '#ff6d2f'; ctx.fillRect(x + 6, y + 1, 4, 5);
+        } else if (p.type === 'medkit') {
+          ctx.fillStyle = '#ff6d6d'; ctx.fillRect(x + 3, y + 3, 10, 10);
+          ctx.fillStyle = '#fff'; ctx.fillRect(x + 6, y + 4, 4, 8); ctx.fillRect(x + 4, y + 6, 8, 4);
+        } else if (p.type === 'armor') {
+          ctx.fillStyle = '#9eb7d8'; ctx.fillRect(x + 3, y + 3, 10, 10);
+          ctx.fillStyle = '#e8f3ff'; ctx.fillRect(x + 6, y + 5, 4, 6);
+        } else if (p.type === 'boots') {
+          ctx.fillStyle = '#8b5d38'; ctx.fillRect(x + 4, y + 6, 4, 6); ctx.fillRect(x + 8, y + 6, 4, 6);
+        } else if (p.type === 'oxygen') {
+          ctx.fillStyle = '#6ed6ff'; ctx.beginPath(); ctx.arc(x + 8, y + 8, 5, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#fff'; ctx.fillRect(x + 7, y + 5, 2, 2);
+        }
+      }
+    }
+
+    function drawFires() {
+      for (const f of fires) {
+        const x = f.x - cameraX;
+        const y = f.y - cameraY;
+        ctx.fillStyle = 'rgba(255,110,40,0.32)';
+        ctx.fillRect(x + 4, y + 4, TILE - 8, TILE - 8);
+        ctx.fillStyle = '#ffde72';
+        ctx.fillRect(x + 12, y + 8, 8, 12);
+        ctx.fillStyle = '#ff6c2c';
+        ctx.fillRect(x + 10, y + 12, 12, 10);
+      }
+    }
+
+    function drawTNTs() {
+      ctx.font = '12px Arial';
+      for (const t of tnts) {
+        const x = t.x - cameraX;
+        const y = t.y - cameraY;
+        ctx.fillStyle = t.armed && frameCount % 8 < 4 ? '#ff7f7f' : '#d33d3d';
+        ctx.fillRect(x, y, 28, 28);
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(x + 4, y + 10, 20, 8);
+        ctx.fillStyle = '#b22222';
+        ctx.fillText(t.label, x + 3, y + 17);
+        if (t.armed) {
+          ctx.fillStyle = '#ffd25f';
+          ctx.fillRect(x + 12, y - 4, 4, 4);
+        }
+      }
+    }
+
+    function drawParticles() {
+      for (const p of particles) {
+        ctx.fillStyle = p.color;
+        ctx.fillRect(p.x - cameraX, p.y - cameraY, p.size, p.size);
+      }
+    }
+
+    function drawMouseHighlight() {
+      if (!mouse.inside || !gameStarted) return;
+      if (mouse.tileX < 0 || mouse.tileX >= WORLD_COLS || mouse.tileY < 0 || mouse.tileY >= WORLD_ROWS) return;
+      const x = mouse.tileX * TILE - cameraX;
+      const y = mouse.tileY * TILE - cameraY;
+      ctx.strokeStyle = state.editMode === 'place' ? '#ffd24d' : '#ff6b6b';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(x + 1, y + 1, TILE - 2, TILE - 2);
+      ctx.fillStyle = state.editMode === 'place' ? 'rgba(255,210,77,0.13)' : 'rgba(255,107,107,0.12)';
+      ctx.fillRect(x + 1, y + 1, TILE - 2, TILE - 2);
+    }
+
+    function updateHealthUI() {
+      healthText.textContent = `Vida: ${Math.ceil(player.health)} / ${MAX_HEALTH}`;
+      healthBarInner.style.width = `${Math.max(0, (player.health / MAX_HEALTH) * 100)}%`;
+      if (player.isBurning) healthBurn.textContent = 'Quemándose...';
+      else if (player.headUnderWater) healthBurn.textContent = player.bubbles > 0 ? `Oxígeno: ${player.bubbles}/${getMaxBubbles()}` : '¡Te estás ahogando!';
+      else if (player.inWater) healthBurn.textContent = 'Dentro del agua';
+      else if (player.inventory.armorTimer > 0) healthBurn.textContent = 'Armadura activa';
+      else if (player.inventory.bootsTimer > 0) healthBurn.textContent = 'Botas activas';
+      else if (player.inventory.oxygenTimer > 0) healthBurn.textContent = 'Tanque O2 activo';
+      else healthBurn.textContent = player.inventory.hasLighter ? 'Mechero obtenido' : '';
+    }
+
+    function updateHUD() {
+      const selected = getSelectedTool();
+      const selectedName = state.activeCategory === 'blocks'
+        ? materialById[selected]?.name
+        : toolsByCategory[state.activeCategory].find(t => t.id === selected)?.name;
+      const inv = [
+        player.inventory.hasLighter ? 'Mechero' : null,
+        player.inventory.armorTimer > 0 ? 'Armadura' : null,
+        player.inventory.bootsTimer > 0 ? 'Botas' : null,
+        player.inventory.oxygenTimer > 0 ? 'O2' : null,
+      ].filter(Boolean).join(', ') || 'Vacío';
+      hud.innerHTML = `
+        Sección: <b>${categories.find(c => c.id === state.activeCategory).label}</b><br>
+        Selección: <b>${selectedName || 'Nada'}</b><br>
+        Modo: <b>${state.editMode === 'place' ? 'Poner' : 'Borrar'}</b><br>
+        Bloque apuntado: <b>${mouse.tileX}, ${mouse.tileY}</b><br>
+        Posición jugador: <b>${Math.floor(player.x / TILE)}, ${Math.floor(player.y / TILE)}</b><br>
+        Inventario: <b>${inv}</b>
+      `;
+    }
+
+    function loop() {
+      frameCount++;
+
+      if (gameStarted) {
+        updatePlayer();
+        if (frameCount % FLUID_UPDATE_INTERVAL === 0) updateFluids();
+        updateDogs();
+        updateMerchants();
+        updatePickups();
+        updateFires();
+        updateTNTs();
+        updateTornadoes();
+        updateMeteors();
+        updateLightnings();
+        updateRains();
+        updateQuakes();
+        updateParticles();
+        updateCamera();
+        updateHealthUI();
+        updateHUD();
+      } else {
+        cameraShakeX = 0;
+        cameraShakeY = 0;
+        updateCamera();
+        updateHealthUI();
+        updateHUD();
+      }
+
+      drawSky();
+      drawWorld();
+      drawRain();
+      drawFires();
+      drawTNTs();
+      drawPickups();
+      drawMerchants();
+      drawDogs();
+      drawPlayer();
+      drawTornadoes();
+      drawMeteors();
+      drawLightnings();
+      drawParticles();
+      drawMouseHighlight();
+
+      requestAnimationFrame(loop);
+    }
+
+    loop();
+  </script>
 </body>
 </html>
